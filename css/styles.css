@@ -65,6 +65,23 @@ html, body {
   margin-bottom: 16px;
 }
 .card-login input:focus { outline: none; border-color: var(--azul); }
+.card-login .lembrar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--texto-suave);
+  text-align: left;
+  margin: -4px 0 16px;
+  cursor: pointer;
+}
+.card-login .lembrar input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  transform: scale(1.2);
+}
 .card-login button {
   width: 100%;
   padding: 14px;
