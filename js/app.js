@@ -109,6 +109,7 @@ function renderPaciente() {
   const p = dados.paciente || {};
   let html = `<div class="item">`;
   if (p.nome) html += `<h3>${esc(p.nome)}</h3>`;
+  html += linha("Mãe", esc(p.mae));
   html += linha("Nascimento", esc(formatarData(p.nascimento)));
   html += linha("Peso", esc(p.peso));
   html += linha("Altura", esc(p.altura));
