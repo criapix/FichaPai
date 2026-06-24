@@ -281,65 +281,114 @@ function navegar(secao) {
 }
 
 // ---------- Login ----------
+const CHAVE_SENHA = "fichapai:senha"; // onde a senha fica guardada (se o usuário optar)
+
+// Carrega o blob e descriptografa. Em caso de erro, lança um Error com .tipo
+// = "rede" (falha ao carregar) ou "senha" (descriptografia falhou).
+async function carregarDados(senha) {
+  log("1) Buscando data/dados.enc.json … (controlado por service worker?", !!navigator.serviceWorker?.controller, ")");
+  const ctrl = new AbortController();
+  const limite = setTimeout(() => { log("1) TIMEOUT de 20s atingido, abortando fetch"); ctrl.abort(); }, 20000);
+  let resp;
+  try {
+    resp = await fetch("data/dados.enc.json", { cache: "no-store", signal: ctrl.signal });
+  } catch (e) {
+    const motivo = e && e.name === "AbortError" ? "tempo esgotado" : (e && e.message) || "erro de rede";
+    throw Object.assign(new Error(motivo), { tipo: "rede" });
+  } finally {
+    clearTimeout(limite);
+  }
+  log("1) Resposta recebida. status:", resp.status, "ok:", resp.ok, "tipo:", resp.type);
+  if (!resp.ok) throw Object.assign(new Error("HTTP " + resp.status), { tipo: "rede" });
+  const blob = await resp.json();
+  log("1) JSON carregado. versão do blob:", blob && blob.v, "iter:", blob && blob.iter);
+
+  log("2) Iniciando descriptografia (PBKDF2 + AES-GCM)…");
+  const tDec = performance.now();
+  try {
+    const d = await decryptData(blob, senha);
+    log("2) Descriptografia OK em", (performance.now() - tDec).toFixed(0), "ms");
+    return d;
+  } catch (e) {
+    throw Object.assign(new Error("senha incorreta"), { tipo: "senha", causa: e });
+  }
+}
+
+function abrirApp() {
+  log("3) Entrando no app e renderizando o início…");
+  document.getElementById("status-login").hidden = true;
+  elLogin.hidden = true;
+  elApp.hidden = false;
+  navegar("inicio");
+  log("3) Pronto. App visível.");
+}
+
 async function entrar(ev) {
   ev.preventDefault();
   const btn = document.getElementById("btn-entrar");
   const erro = document.getElementById("erro-login");
   const status = document.getElementById("status-login");
   const senha = document.getElementById("senha").value;
-  log("entrar(): submit recebido. Tamanho da senha:", senha.length);
+  const lembrar = document.getElementById("lembrar").checked;
+  log("entrar(): submit recebido. Tamanho da senha:", senha.length, "| lembrar:", lembrar);
   erro.hidden = true;
   status.hidden = false;
   status.textContent = "Descriptografando…";
   btn.disabled = true;
 
-  function falhar(msg) {
-    log("entrar(): FALHA ->", msg);
+  try {
+    dados = await carregarDados(senha);
+  } catch (e) {
+    console.error("[FichaPai] Falha no login:", e);
     status.hidden = true;
     erro.hidden = false;
-    erro.textContent = msg;
     btn.disabled = false;
-  }
-
-  // 1) Carrega o arquivo criptografado (com timeout para nunca travar)
-  let blob;
-  try {
-    log("1) Buscando data/dados.enc.json … (controlado por service worker?", !!navigator.serviceWorker?.controller, ")");
-    const ctrl = new AbortController();
-    const limite = setTimeout(() => { log("1) TIMEOUT de 20s atingido, abortando fetch"); ctrl.abort(); }, 20000);
-    const resp = await fetch("data/dados.enc.json", { cache: "no-store", signal: ctrl.signal });
-    clearTimeout(limite);
-    log("1) Resposta recebida. status:", resp.status, "ok:", resp.ok, "tipo:", resp.type);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    blob = await resp.json();
-    log("1) JSON carregado. versão do blob:", blob && blob.v, "iter:", blob && blob.iter);
-  } catch (e) {
-    console.error("[FichaPai] Falha ao carregar dados:", e);
-    const motivo = e && e.name === "AbortError" ? "tempo esgotado" : (e && e.message) || "erro de rede";
-    falhar("Não foi possível carregar os dados (" + motivo + "). Toque em “Limpar cache e recarregar”.");
+    if (e.tipo === "senha") {
+      erro.textContent = "Senha incorreta. Tente novamente.";
+      document.getElementById("senha").select();
+    } else {
+      erro.textContent = "Não foi possível carregar os dados (" + e.message + "). Toque em “Limpar cache e recarregar”.";
+    }
     return;
   }
 
-  // 2) Descriptografa (falha aqui = senha incorreta)
+  // Guarda (ou remove) a senha conforme a escolha do usuário
   try {
-    log("2) Iniciando descriptografia (PBKDF2 + AES-GCM)…");
-    const tDec = performance.now();
-    dados = await decryptData(blob, senha);
-    log("2) Descriptografia OK em", (performance.now() - tDec).toFixed(0), "ms");
+    if (lembrar) { localStorage.setItem(CHAVE_SENHA, senha); log("senha guardada localmente para auto-login"); }
+    else { localStorage.removeItem(CHAVE_SENHA); }
+  } catch (e) { console.error("[FichaPai] localStorage indisponível:", e); }
+
+  abrirApp();
+}
+
+// Tenta entrar automaticamente com a senha guardada (se houver).
+async function autoLogin() {
+  let senha = null;
+  try { senha = localStorage.getItem(CHAVE_SENHA); } catch {}
+  if (!senha) { log("autoLogin: nenhuma senha guardada."); return; }
+
+  log("autoLogin: senha guardada encontrada, entrando automaticamente…");
+  const status = document.getElementById("status-login");
+  document.getElementById("senha").value = senha; // exibido como pontos
+  status.hidden = false;
+  status.textContent = "Entrando…";
+
+  try {
+    dados = await carregarDados(senha);
   } catch (e) {
-    console.error("[FichaPai] Falha ao descriptografar:", e);
-    falhar("Senha incorreta. Tente novamente.");
-    document.getElementById("senha").select();
+    log("autoLogin: falhou (", e.tipo, ") — exibindo tela de login.");
+    status.hidden = true;
+    if (e.tipo === "senha") {
+      // senha guardada não vale mais (ex.: senha foi trocada) — descarta
+      try { localStorage.removeItem(CHAVE_SENHA); } catch {}
+      document.getElementById("senha").value = "";
+      const erro = document.getElementById("erro-login");
+      erro.hidden = false;
+      erro.textContent = "A senha salva não é mais válida. Digite novamente.";
+    }
     return;
   }
-
-  // 3) Entra no app
-  log("3) Entrando no app e renderizando o início…");
-  status.hidden = true;
-  elLogin.hidden = true;
-  elApp.hidden = false;
-  navegar("inicio");
-  log("3) Pronto. App visível.");
+  abrirApp();
 }
 
 // Remove service worker e caches antigos e recarrega — resolve telas presas por cache.
@@ -364,7 +413,9 @@ async function limparCache() {
 }
 
 function sair() {
+  log("sair(): encerrando sessão e apagando senha guardada");
   dados = null;
+  try { localStorage.removeItem(CHAVE_SENHA); } catch {}
   elApp.hidden = true;
   elLogin.hidden = false;
   document.getElementById("senha").value = "";
@@ -381,7 +432,10 @@ document.getElementById("btn-sair").addEventListener("click", sair);
 // Exposto apenas para testes automatizados (inofensivo no navegador).
 export { navegar };
 
-log("handlers de login registrados. Aguardando senha.");
+log("handlers de login registrados.");
+
+// Auto-login se houver senha guardada neste dispositivo.
+autoLogin();
 
 // ---------- Service worker (PWA) ----------
 if ("serviceWorker" in navigator) {
