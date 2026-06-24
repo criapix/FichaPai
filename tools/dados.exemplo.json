@@ -1,0 +1,49 @@
+{
+  "paciente": {
+    "nome": "Nome completo",
+    "nascimento": "AAAA-MM-DD",
+    "peso": "00 kg",
+    "altura": "0,00 m",
+    "endereco": "Rua, número, complemento — CEP",
+    "documentos": [
+      { "tipo": "CPF", "numero": "000.000.000-00", "obs": "" },
+      { "tipo": "RG", "numero": "000000000", "obs": "órgão emissor" }
+    ],
+    "contatos": [
+      { "tipo": "telefone", "valor": "(00) 00000-0000" },
+      { "tipo": "email", "valor": "email@exemplo.com" }
+    ]
+  },
+  "planos": [
+    { "tipo": "saude", "operadora": "Operadora", "plano": "Nome do plano", "numeroCarteira": "0000 0000 0000 0000", "validade": "AAAA-MM-DD", "telefoneOperadora": "(00) 0000-0000", "obs": "" },
+    { "tipo": "dentario", "operadora": "Operadora", "plano": "", "numeroCarteira": "", "validade": "", "telefoneOperadora": "", "obs": "" }
+  ],
+  "condicoesMedicas": [
+    "Descrição de uma condição ou observação clínica"
+  ],
+  "cirurgias": [
+    { "descricao": "Nome da cirurgia", "data": "AAAA-MM-DD", "obs": "" }
+  ],
+  "medicamentos": [
+    { "nome": "Medicamento e dosagem", "objetivo": "Para que serve", "medico": "Quem receitou", "uso": "Quando/como usar" }
+  ],
+  "medicos": [
+    { "nome": "Dr(a). Nome", "especialidade": "Especialidade", "telefones": ["(00) 0000-0000"], "email": "", "endereco": "", "obs": "" }
+  ],
+  "consultas": [
+    { "data": "AAAA-MM-DD", "hora": "00h", "medico": "Dr(a). Nome", "local": "", "status": "agendada", "resultado": "" }
+  ],
+  "exames": [
+    { "data": "AAAA-MM-DD", "hora": "", "tipo": "Nome do exame", "local": "Laboratório/Clínica", "solicitante": "", "status": "realizado", "resultado": "Resumo do resultado", "portal": { "url": "", "login": "", "senha": "", "validadeLaudo": "" } }
+  ],
+  "casaRepouso": {
+    "nome": "Nome da casa de repouso",
+    "endereco": "",
+    "telefone": "(00) 0000-0000",
+    "contatos": [
+      { "nome": "Nome", "funcao": "responsavel", "telefone": "(00) 00000-0000" },
+      { "nome": "Nome", "funcao": "medico", "telefone": "" },
+      { "nome": "Nome", "funcao": "enfermeiro", "telefone": "" }
+    ]
+  }
+}

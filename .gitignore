@@ -1,0 +1,11 @@
+# Dados em texto puro — NUNCA devem ser commitados
+tools/.dados.plain.json
+tools/*.plain.json
+*.plain.json
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
+*.log

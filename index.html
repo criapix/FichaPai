@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f5f8b" />
+  <meta name="description" content="Acompanhamento de cuidado — acesso protegido por senha." />
+  <title>Acompanhamento do Cuidado</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- Tela de login -->
+  <main id="tela-login" class="tela-login">
+    <form id="form-login" class="card-login" autocomplete="off">
+      <div class="login-icone" aria-hidden="true">🔒</div>
+      <h1>Acompanhamento do Cuidado</h1>
+      <p class="login-sub">Conteúdo protegido. Digite a senha para acessar.</p>
+      <label for="senha" class="sr-only">Senha</label>
+      <input id="senha" name="senha" type="password" inputmode="text"
+             placeholder="Senha" autocomplete="current-password" required />
+      <button id="btn-entrar" type="submit">Entrar</button>
+      <p id="erro-login" class="erro" role="alert" hidden>Senha incorreta. Tente novamente.</p>
+      <p id="status-login" class="status" hidden>Descriptografando…</p>
+    </form>
+  </main>
+
+  <!-- App (oculto até autenticar) -->
+  <div id="app" class="app" hidden>
+    <header class="topo">
+      <button id="btn-voltar" class="btn-icone" hidden aria-label="Voltar">‹</button>
+      <h1 id="titulo-tela">Início</h1>
+      <button id="btn-sair" class="btn-icone" aria-label="Sair">⎋</button>
+    </header>
+    <main id="conteudo" class="conteudo"></main>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
