@@ -76,6 +76,18 @@ html, body {
 .card-login button:disabled { opacity: 0.6; cursor: progress; }
 .erro { color: var(--erro); margin: 16px 0 0; font-size: 16px; }
 .status { color: var(--texto-suave); margin: 16px 0 0; font-size: 16px; }
+.card-login .link-limpar {
+  width: 100%;
+  margin: 18px 0 0;
+  padding: 8px;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: underline;
+  border-radius: 0;
+}
+.card-login .link-limpar:hover { background: none; color: var(--azul); }
 
 /* ---------- App ---------- */
 .topo {
