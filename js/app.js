@@ -188,8 +188,9 @@ function renderConsultas() {
   const lista = [...(dados.consultas || [])];
   if (!lista.length) return vazio("Nenhuma consulta registrada.");
   lista.sort((a, b) => (b.data || "").localeCompare(a.data || ""));
-  const futuras = lista.filter((c) => c.status === "agendada" && c.data >= hoje());
-  const resto = lista.filter((c) => !(c.status === "agendada" && c.data >= hoje()));
+  const agendada = (c) => c.status === "agendada" && (!c.data || c.data >= hoje());
+  const futuras = lista.filter(agendada);
+  const resto = lista.filter((c) => !agendada(c));
   let html = "";
   if (futuras.length) html += `<h2 class="secao-titulo">Agendadas</h2>` + futuras.map(consultaItem).join("");
   if (resto.length) html += `<h2 class="secao-titulo">Histórico</h2>` + resto.map(consultaItem).join("");
@@ -197,9 +198,9 @@ function renderConsultas() {
 }
 function consultaItem(c) {
   const ag = c.status === "agendada";
-  return `<div class="item${ag && c.data >= hoje() ? " proximo" : ""}">
+  return `<div class="item${ag ? " proximo" : ""}">
     <h3>${esc(c.medico || "Consulta")} <span class="tag ${ag ? "agendado" : "realizado"}">${ag ? "Agendada" : "Realizada"}</span></h3>
-    ${linha("Data", esc(formatarData(c.data)) + (c.hora ? " · " + esc(c.hora) : ""))}
+    ${linha("Data", (c.data ? esc(formatarData(c.data)) : "A agendar") + (c.hora ? " · " + esc(c.hora) : ""))}
     ${linha("Local", esc(c.local))}
     ${c.resultado ? `<div class="obs">${esc(c.resultado)}</div>` : ""}
   </div>`;
@@ -209,8 +210,9 @@ function renderExames() {
   const lista = [...(dados.exames || [])];
   if (!lista.length) return vazio("Nenhum exame registrado.");
   lista.sort((a, b) => (b.data || "").localeCompare(a.data || ""));
-  const futuros = lista.filter((e) => e.status === "agendado" && e.data >= hoje());
-  const resto = lista.filter((e) => !(e.status === "agendado" && e.data >= hoje()));
+  const agendado = (e) => e.status === "agendado" && (!e.data || e.data >= hoje());
+  const futuros = lista.filter(agendado);
+  const resto = lista.filter((e) => !agendado(e));
   let html = "";
   if (futuros.length) html += `<h2 class="secao-titulo">Agendados</h2>` + futuros.map(exameItem).join("");
   if (resto.length) html += `<h2 class="secao-titulo">Histórico</h2>` + resto.map(exameItem).join("");
@@ -226,11 +228,12 @@ function exameItem(e) {
     if (e.portal.validadeLaudo) portal += `<br>Disponível em: ${esc(formatarData(e.portal.validadeLaudo))}`;
     portal += `</div>`;
   }
-  return `<div class="item${ag && e.data >= hoje() ? " proximo" : ""}">
+  return `<div class="item${ag ? " proximo" : ""}">
     <h3>${esc(e.tipo || "Exame")} <span class="tag ${ag ? "agendado" : "realizado"}">${ag ? "Agendado" : "Realizado"}</span></h3>
-    ${linha("Data", esc(formatarData(e.data)) + (e.hora ? " · " + esc(e.hora) : ""))}
+    ${linha("Data", (e.data ? esc(formatarData(e.data)) : "A agendar") + (e.hora ? " · " + esc(e.hora) : ""))}
     ${linha("Local", esc(e.local))}
     ${linha("Solicitante", esc(e.solicitante))}
+    ${e.preparo ? `<div class="preparo-bloco"><strong>⚠️ Preparo</strong><br>${esc(e.preparo)}</div>` : ""}
     ${e.resultado ? `<div class="obs">${esc(e.resultado)}</div>` : ""}
     ${portal}
   </div>`;

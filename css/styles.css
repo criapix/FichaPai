@@ -191,6 +191,16 @@ html, body {
 .item .rotulo { color: var(--texto-suave); min-width: 96px; flex: 0 0 auto; }
 .item .valor { flex: 1; word-break: break-word; }
 .item .obs { margin-top: 8px; font-size: 15px; color: var(--texto-suave); white-space: pre-wrap; }
+.preparo-bloco {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--destaque);
+  border: 1px solid var(--destaque-borda);
+  border-radius: 10px;
+  font-size: 15px;
+  color: #6b5410;
+  white-space: pre-wrap;
+}
 .item a { color: var(--azul); }
 
 .tag {
