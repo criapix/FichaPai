@@ -22,7 +22,10 @@ const els = {};
 globalThis.document = {
   getElementById(id) { if (!els[id]) { els[id] = makeEl(); els[id]._id = id; } return els[id]; },
 };
-globalThis.window = { addEventListener() {}, scrollTo() {} }; // navigator nativo do Node não tem serviceWorker
+globalThis.window = { addEventListener() {}, scrollTo() {}, caches: undefined }; // navigator nativo do Node não tem serviceWorker
+globalThis.location = { href: "http://teste/", reload() {} };
+const _ls = new Map();
+globalThis.localStorage = { getItem: (k) => (_ls.has(k) ? _ls.get(k) : null), setItem: (k, v) => _ls.set(k, String(v)), removeItem: (k) => _ls.delete(k) };
 globalThis.fetch = async () => ({ ok: true, json: async () => JSON.parse(blobJson) });
 
 const { navegar } = await import("../js/app.js");
