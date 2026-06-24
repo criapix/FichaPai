@@ -1,5 +1,12 @@
 import { decryptData } from "./crypto.js";
 
+// ---------- Log de diagnóstico (visível no Console do navegador) ----------
+const T0 = performance.now();
+function log(...args) {
+  console.log(`[FichaPai +${(performance.now() - T0).toFixed(0)}ms]`, ...args);
+}
+log("app.js carregado. URL:", location.href);
+
 // ---------- Estado ----------
 let dados = null; // dados descriptografados (somente em memória)
 const elLogin = document.getElementById("tela-login");
@@ -256,6 +263,7 @@ function vazio(msg) {
 
 // ---------- Navegação ----------
 function navegar(secao) {
+  log("navegar():", secao);
   if (secao === "inicio" || !SECOES[secao]) {
     elTitulo.textContent = "Início";
     elVoltar.hidden = true;
@@ -279,12 +287,14 @@ async function entrar(ev) {
   const erro = document.getElementById("erro-login");
   const status = document.getElementById("status-login");
   const senha = document.getElementById("senha").value;
+  log("entrar(): submit recebido. Tamanho da senha:", senha.length);
   erro.hidden = true;
   status.hidden = false;
   status.textContent = "Descriptografando…";
   btn.disabled = true;
 
   function falhar(msg) {
+    log("entrar(): FALHA ->", msg);
     status.hidden = true;
     erro.hidden = false;
     erro.textContent = msg;
@@ -294,14 +304,17 @@ async function entrar(ev) {
   // 1) Carrega o arquivo criptografado (com timeout para nunca travar)
   let blob;
   try {
+    log("1) Buscando data/dados.enc.json … (controlado por service worker?", !!navigator.serviceWorker?.controller, ")");
     const ctrl = new AbortController();
-    const limite = setTimeout(() => ctrl.abort(), 20000);
+    const limite = setTimeout(() => { log("1) TIMEOUT de 20s atingido, abortando fetch"); ctrl.abort(); }, 20000);
     const resp = await fetch("data/dados.enc.json", { cache: "no-store", signal: ctrl.signal });
     clearTimeout(limite);
+    log("1) Resposta recebida. status:", resp.status, "ok:", resp.ok, "tipo:", resp.type);
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     blob = await resp.json();
+    log("1) JSON carregado. versão do blob:", blob && blob.v, "iter:", blob && blob.iter);
   } catch (e) {
-    console.error("Falha ao carregar dados:", e);
+    console.error("[FichaPai] Falha ao carregar dados:", e);
     const motivo = e && e.name === "AbortError" ? "tempo esgotado" : (e && e.message) || "erro de rede";
     falhar("Não foi possível carregar os dados (" + motivo + "). Toque em “Limpar cache e recarregar”.");
     return;
@@ -309,35 +322,44 @@ async function entrar(ev) {
 
   // 2) Descriptografa (falha aqui = senha incorreta)
   try {
+    log("2) Iniciando descriptografia (PBKDF2 + AES-GCM)…");
+    const tDec = performance.now();
     dados = await decryptData(blob, senha);
+    log("2) Descriptografia OK em", (performance.now() - tDec).toFixed(0), "ms");
   } catch (e) {
-    console.error("Falha ao descriptografar:", e);
+    console.error("[FichaPai] Falha ao descriptografar:", e);
     falhar("Senha incorreta. Tente novamente.");
     document.getElementById("senha").select();
     return;
   }
 
   // 3) Entra no app
+  log("3) Entrando no app e renderizando o início…");
   status.hidden = true;
   elLogin.hidden = true;
   elApp.hidden = false;
   navegar("inicio");
+  log("3) Pronto. App visível.");
 }
 
 // Remove service worker e caches antigos e recarrega — resolve telas presas por cache.
 async function limparCache() {
+  log("limparCache(): iniciando limpeza de service workers e caches");
   try {
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
+      log("limparCache(): removendo", regs.length, "service worker(s)");
       await Promise.all(regs.map((r) => r.unregister()));
     }
     if (window.caches) {
       const chaves = await caches.keys();
+      log("limparCache(): apagando caches:", chaves);
       await Promise.all(chaves.map((k) => caches.delete(k)));
     }
   } catch (e) {
-    console.error(e);
+    console.error("[FichaPai] erro ao limpar cache:", e);
   }
+  log("limparCache(): recarregando a página");
   location.reload();
 }
 
@@ -359,9 +381,16 @@ document.getElementById("btn-sair").addEventListener("click", sair);
 // Exposto apenas para testes automatizados (inofensivo no navegador).
 export { navegar };
 
+log("handlers de login registrados. Aguardando senha.");
+
 // ---------- Service worker (PWA) ----------
 if ("serviceWorker" in navigator) {
+  log("service worker suportado. Controlando esta página agora?", !!navigator.serviceWorker.controller);
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js")
+      .then((reg) => log("service worker registrado. escopo:", reg.scope))
+      .catch((e) => console.error("[FichaPai] falha ao registrar service worker:", e));
   });
+} else {
+  log("service worker NÃO suportado neste navegador.");
 }
