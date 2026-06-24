@@ -281,21 +281,64 @@ async function entrar(ev) {
   const senha = document.getElementById("senha").value;
   erro.hidden = true;
   status.hidden = false;
+  status.textContent = "Descriptografando…";
   btn.disabled = true;
-  try {
-    const resp = await fetch("data/dados.enc.json", { cache: "no-store" });
-    if (!resp.ok) throw new Error("blob");
-    const blob = await resp.json();
-    dados = await decryptData(blob, senha);
-    elLogin.hidden = true;
-    elApp.hidden = false;
-    navegar("inicio");
-  } catch (e) {
+
+  function falhar(msg) {
     status.hidden = true;
     erro.hidden = false;
+    erro.textContent = msg;
     btn.disabled = false;
-    document.getElementById("senha").select();
   }
+
+  // 1) Carrega o arquivo criptografado (com timeout para nunca travar)
+  let blob;
+  try {
+    const ctrl = new AbortController();
+    const limite = setTimeout(() => ctrl.abort(), 20000);
+    const resp = await fetch("data/dados.enc.json", { cache: "no-store", signal: ctrl.signal });
+    clearTimeout(limite);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    blob = await resp.json();
+  } catch (e) {
+    console.error("Falha ao carregar dados:", e);
+    const motivo = e && e.name === "AbortError" ? "tempo esgotado" : (e && e.message) || "erro de rede";
+    falhar("Não foi possível carregar os dados (" + motivo + "). Toque em “Limpar cache e recarregar”.");
+    return;
+  }
+
+  // 2) Descriptografa (falha aqui = senha incorreta)
+  try {
+    dados = await decryptData(blob, senha);
+  } catch (e) {
+    console.error("Falha ao descriptografar:", e);
+    falhar("Senha incorreta. Tente novamente.");
+    document.getElementById("senha").select();
+    return;
+  }
+
+  // 3) Entra no app
+  status.hidden = true;
+  elLogin.hidden = true;
+  elApp.hidden = false;
+  navegar("inicio");
+}
+
+// Remove service worker e caches antigos e recarrega — resolve telas presas por cache.
+async function limparCache() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if (window.caches) {
+      const chaves = await caches.keys();
+      await Promise.all(chaves.map((k) => caches.delete(k)));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  location.reload();
 }
 
 function sair() {
@@ -309,6 +352,7 @@ function sair() {
 }
 
 document.getElementById("form-login").addEventListener("submit", entrar);
+document.getElementById("btn-limpar").addEventListener("click", limparCache);
 document.getElementById("btn-voltar").addEventListener("click", () => navegar("inicio"));
 document.getElementById("btn-sair").addEventListener("click", sair);
 
