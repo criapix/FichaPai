@@ -4,7 +4,7 @@
 //
 // IMPORTANTE: ao publicar uma atualização, troque o número da versão abaixo para
 // forçar a renovação do cache nos dispositivos.
-const CACHE = "cuidado-v3";
+const CACHE = "cuidado-v4";
 const ASSETS = [
   ".",
   "index.html",
