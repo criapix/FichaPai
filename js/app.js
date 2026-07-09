@@ -57,6 +57,7 @@ const SECOES = {
   condicoes:   { titulo: "Condições médicas", emoji: "🩺", render: renderCondicoes, qtd: (d) => (d.condicoesMedicas || []).length },
   medicamentos:{ titulo: "Medicamentos", emoji: "💊", render: renderMedicamentos,  qtd: (d) => (d.medicamentos || []).length },
   cirurgias:   { titulo: "Cirurgias", emoji: "🏥", render: renderCirurgias,        qtd: (d) => (d.cirurgias || []).length },
+  internacoes: { titulo: "Internações", emoji: "🚑", render: renderInternacoes,   qtd: (d) => (d.internacoes || []).length },
   planos:      { titulo: "Planos", emoji: "💳", render: renderPlanos,              qtd: (d) => (d.planos || []).length },
   medicos:     { titulo: "Médicos", emoji: "👨‍⚕️", render: renderMedicos,          qtd: (d) => (d.medicos || []).length },
   consultas:   { titulo: "Consultas", emoji: "📅", render: renderConsultas,        qtd: (d) => (d.consultas || []).length },
@@ -153,6 +154,20 @@ function renderCirurgias() {
     <h3>${esc(c.descricao)}</h3>
     ${linha("Data", esc(formatarData(c.data)))}
     ${c.obs ? `<div class="obs">${esc(c.obs)}</div>` : ""}
+  </div>`).join("");
+}
+
+function renderInternacoes() {
+  const lista = dados.internacoes || [];
+  if (!lista.length) return vazio("Nenhuma internação registrada.");
+  return lista.map((i) => `<div class="item">
+    <h3>${esc(i.local || "Internação")}${i.duracao ? ` <span class="tag">${esc(i.duracao)}</span>` : ""}</h3>
+    ${linha("Entrada", esc(formatarData(i.entrada)))}
+    ${linha("Saída", esc(formatarData(i.saida)))}
+    ${linha("Motivo", esc(i.motivo))}
+    ${linha("Sintomas", esc(i.sintomas))}
+    ${linha("Médico responsável", esc(i.medico))}
+    ${i.obs ? `<div class="obs">${esc(i.obs)}</div>` : ""}
   </div>`).join("");
 }
 
