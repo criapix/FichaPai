@@ -4,7 +4,7 @@
 //
 // IMPORTANTE: ao publicar uma atualização, troque o número da versão abaixo para
 // forçar a renovação do cache nos dispositivos.
-const CACHE = "cuidado-v7";
+const CACHE = "cuidado-v8";
 const ASSETS = [
   ".",
   "index.html",
@@ -12,6 +12,7 @@ const ASSETS = [
   "js/app.js",
   "js/crypto.js",
   "data/dados.enc.json",
+  "data/img/vivest-carteira.enc.json",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",
