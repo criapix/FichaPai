@@ -1,4 +1,4 @@
-import { decryptData } from "./crypto.js";
+import { decryptData, decryptBytes } from "./crypto.js";
 
 // ---------- Log de diagnóstico (visível no Console do navegador) ----------
 const T0 = performance.now();
@@ -9,6 +9,7 @@ log("app.js carregado. URL:", location.href);
 
 // ---------- Estado ----------
 let dados = null; // dados descriptografados (somente em memória)
+let senhaAtual = null; // senha em memória, para decifrar imagens sob demanda
 const elLogin = document.getElementById("tela-login");
 const elApp = document.getElementById("app");
 const elConteudo = document.getElementById("conteudo");
@@ -181,7 +182,7 @@ function renderPlanos() {
     ${linha("Validade", esc(formatarData(p.validade)))}
     ${p.telefoneOperadora ? linha("Telefone", telLink(p.telefoneOperadora)) : ""}
     ${p.obs ? `<div class="obs">${esc(p.obs)}</div>` : ""}
-    ${(p.imagensCarteira || []).length ? `<div class="carteira-imgs">${p.imagensCarteira.map((src) => `<img src="${esc(src)}" alt="Carteirinha ${esc(p.operadora || "")}" loading="lazy" />`).join("")}</div>` : ""}
+    ${(p.imagensCarteira || []).length ? `<div class="carteira-imgs">${p.imagensCarteira.map((img) => `<img data-enc="${esc(img.arquivo)}" data-tipo="${esc(img.tipo || "image/jpeg")}" alt="Carteirinha ${esc(p.operadora || "")}" loading="lazy" />`).join("")}</div>` : ""}
   </div>`).join("");
 }
 
@@ -297,7 +298,31 @@ function navegar(secao) {
     elVoltar.hidden = false;
     elConteudo.innerHTML = s.render();
   }
+  carregarImagensCifradas(elConteudo);
   window.scrollTo(0, 0);
+}
+
+// Decifra sob demanda as imagens marcadas com data-enc (arquivos cifrados
+// separados, ex.: carteirinhas) e as exibe via object URL.
+async function carregarImagensCifradas(container) {
+  const imgs = container.querySelectorAll("img[data-enc]");
+  for (const el of imgs) {
+    const arquivo = el.getAttribute("data-enc");
+    const tipo = el.getAttribute("data-tipo") || "image/jpeg";
+    el.removeAttribute("data-enc"); // evita recarregar
+    if (!senhaAtual) continue;
+    try {
+      const resp = await fetch(arquivo, { cache: "no-store" });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const blob = await resp.json();
+      const buf = await decryptBytes(blob, senhaAtual);
+      el.src = URL.createObjectURL(new Blob([buf], { type: tipo }));
+    } catch (e) {
+      console.error("[FichaPai] falha ao carregar imagem cifrada:", arquivo, e);
+      el.replaceWith(Object.assign(document.createElement("div"), {
+        className: "obs", textContent: "Não foi possível carregar a imagem." }));
+    }
+  }
 }
 
 // ---------- Login ----------
@@ -328,6 +353,7 @@ async function carregarDados(senha) {
   try {
     const d = await decryptData(blob, senha);
     log("2) Descriptografia OK em", (performance.now() - tDec).toFixed(0), "ms");
+    senhaAtual = senha; // guarda em memória para decifrar imagens sob demanda
     return d;
   } catch (e) {
     throw Object.assign(new Error("senha incorreta"), { tipo: "senha", causa: e });
@@ -435,6 +461,7 @@ async function limparCache() {
 function sair() {
   log("sair(): encerrando sessão e apagando senha guardada");
   dados = null;
+  senhaAtual = null;
   try { localStorage.removeItem(CHAVE_SENHA); } catch {}
   elApp.hidden = true;
   elLogin.hidden = false;

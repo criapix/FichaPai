@@ -55,6 +55,48 @@ function encrypt(password) {
   console.log(`OK: data/dados.enc.json gerado (${ct.length} bytes cifrados).`);
 }
 
+// Criptografa um arquivo binário qualquer (ex.: imagem de carteirinha) para um
+// blob no mesmo formato do Web Crypto. Uso: encrypt-file <entrada> <saida.enc.json>
+function encryptFile(password, inPath, outPath) {
+  const plaintext = readFileSync(inPath); // Buffer binário
+  const salt = randomBytes(16);
+  const iv = randomBytes(12);
+  const key = deriveKey(password, salt);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const ct = Buffer.concat([ciphertext, cipher.getAuthTag()]);
+  const blob = {
+    v: 1, kdf: "PBKDF2", iter: ITER,
+    salt: salt.toString("base64"),
+    iv: iv.toString("base64"),
+    ct: ct.toString("base64"),
+  };
+  writeFileSync(outPath, JSON.stringify(blob) + "\n");
+  console.log(`OK: ${outPath} gerado (${ct.length} bytes cifrados a partir de ${plaintext.length} bytes).`);
+}
+
+// Descriptografa um arquivo cifrado por encryptFile. Uso: decrypt-file <entrada.enc.json> <saida>
+function decryptFile(password, inPath, outPath) {
+  const blob = JSON.parse(readFileSync(inPath, "utf8"));
+  const salt = Buffer.from(blob.salt, "base64");
+  const iv = Buffer.from(blob.iv, "base64");
+  const ctFull = Buffer.from(blob.ct, "base64");
+  const tag = ctFull.subarray(ctFull.length - 16);
+  const ciphertext = ctFull.subarray(0, ctFull.length - 16);
+  const key = deriveKey(password, salt);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  let out;
+  try {
+    out = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  } catch {
+    console.error("ERRO: senha incorreta ou dados corrompidos.");
+    process.exit(1);
+  }
+  writeFileSync(outPath, out);
+  console.log(`OK: ${outPath} gerado (${out.length} bytes).`);
+}
+
 function decrypt(password) {
   const blob = JSON.parse(readFileSync(ENC_PATH, "utf8"));
   const salt = Buffer.from(blob.salt, "base64");
@@ -111,7 +153,15 @@ if (cmd === "encrypt") {
   encrypt(password);
 } else if (cmd === "decrypt") {
   decrypt(password);
+} else if (cmd === "encrypt-file") {
+  const [, , , inPath, outPath] = process.argv;
+  if (!inPath || !outPath) { console.error("Uso: node tools/cripto.mjs encrypt-file <entrada> <saida.enc.json>"); process.exit(1); }
+  encryptFile(password, inPath, outPath);
+} else if (cmd === "decrypt-file") {
+  const [, , , inPath, outPath] = process.argv;
+  if (!inPath || !outPath) { console.error("Uso: node tools/cripto.mjs decrypt-file <entrada.enc.json> <saida>"); process.exit(1); }
+  decryptFile(password, inPath, outPath);
 } else {
-  console.error("Uso: node tools/cripto.mjs <encrypt|decrypt>");
+  console.error("Uso: node tools/cripto.mjs <encrypt|decrypt|encrypt-file|decrypt-file>");
   process.exit(1);
 }
