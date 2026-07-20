@@ -181,6 +181,7 @@ function renderPlanos() {
     ${linha("Validade", esc(formatarData(p.validade)))}
     ${p.telefoneOperadora ? linha("Telefone", telLink(p.telefoneOperadora)) : ""}
     ${p.obs ? `<div class="obs">${esc(p.obs)}</div>` : ""}
+    ${(p.imagensCarteira || []).length ? `<div class="carteira-imgs">${p.imagensCarteira.map((src) => `<img src="${esc(src)}" alt="Carteirinha ${esc(p.operadora || "")}" loading="lazy" />`).join("")}</div>` : ""}
   </div>`).join("");
 }
 
