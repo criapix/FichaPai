@@ -26,21 +26,26 @@ async function deriveKey(password, salt, iterations) {
   );
 }
 
+// Recebe o blob ({v,iter,salt,iv,ct}) e a senha. Retorna os bytes decifrados
+// (ArrayBuffer). Lança erro se a senha estiver incorreta (falha na tag GCM).
+async function decryptBytes(blob, password) {
+  const salt = base64ToBytes(blob.salt);
+  const iv = base64ToBytes(blob.iv);
+  const ct = base64ToBytes(blob.ct); // ciphertext || authTag (16 bytes)
+  const key = await deriveKey(password, salt, blob.iter || 250000);
+  return crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+}
+
 // Recebe o blob ({v,iter,salt,iv,ct}) e a senha. Retorna o objeto de dados.
 // Lança erro se a senha estiver incorreta (falha na verificação da tag GCM).
 async function decryptData(blob, password) {
   const dbg = typeof console !== "undefined" ? (m) => console.log("[FichaPai/crypto]", m) : () => {};
   dbg("crypto.subtle disponível? " + (typeof crypto !== "undefined" && !!crypto.subtle) + " | contexto seguro? " + (typeof isSecureContext !== "undefined" ? isSecureContext : "n/a"));
-  const salt = base64ToBytes(blob.salt);
-  const iv = base64ToBytes(blob.iv);
-  const ct = base64ToBytes(blob.ct); // ciphertext || authTag (16 bytes)
   dbg("derivando chave (PBKDF2, " + (blob.iter || 250000) + " iterações)…");
-  const key = await deriveKey(password, salt, blob.iter || 250000);
-  dbg("chave derivada. descriptografando (AES-GCM)…");
-  const plaintextBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  const plaintextBuf = await decryptBytes(blob, password);
   dbg("descriptografado. fazendo parse do JSON…");
   const json = new TextDecoder().decode(plaintextBuf);
   return JSON.parse(json);
 }
 
-export { decryptData };
+export { decryptData, decryptBytes };

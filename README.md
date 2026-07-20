@@ -55,6 +55,21 @@ git add data/dados.enc.json && git commit -m "Atualiza dados" && git push
 Ao publicar uma atualização, incremente a versão do cache em `sw.js` (`cuidado-vN`) para
 que os dispositivos baixem a versão nova.
 
+### Imagens (ex.: carteirinhas)
+
+Para não inflar `data/dados.enc.json`, imagens ficam em arquivos cifrados separados
+(mesma senha), carregados sob demanda:
+
+```bash
+# Cifrar uma imagem para um arquivo próprio
+DADOS_SENHA="sua-frase-secreta" node tools/cripto.mjs encrypt-file foto.jpg data/img/nome.enc.json
+```
+
+Depois, referencie o arquivo no plano correspondente (dentro dos dados), no campo
+`imagensCarteira`, como `[{ "arquivo": "data/img/nome.enc.json", "tipo": "image/jpeg" }]`,
+e adicione o caminho à lista `ASSETS` em `sw.js` (para uso offline). Para conferir o
+conteúdo, use `decrypt-file <entrada.enc.json> <saida>`.
+
 ## Definir/alterar a senha
 
 A senha é simplesmente a chave usada no passo `encrypt`. Para trocar de senha, basta
