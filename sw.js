@@ -4,7 +4,7 @@
 //
 // IMPORTANTE: ao publicar uma atualização, troque o número da versão abaixo para
 // forçar a renovação do cache nos dispositivos.
-const CACHE = "cuidado-v9";
+const CACHE = "cuidado-v10";
 const ASSETS = [
   ".",
   "index.html",
@@ -14,6 +14,8 @@ const ASSETS = [
   "data/dados.enc.json",
   "data/img/vivest-carteira.enc.json",
   "data/img/cassi-carteira.enc.json",
+  "data/img/cra-identidade.enc.json",
+  "data/img/cnh.enc.json",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",
