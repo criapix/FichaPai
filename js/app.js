@@ -125,7 +125,10 @@ function renderPaciente() {
   if ((p.documentos || []).length) {
     html += `<h2 class="secao-titulo">Documentos</h2>`;
     for (const doc of p.documentos) {
-      html += `<div class="item"><h3>${esc(doc.tipo)}</h3>${linha("Número", esc(doc.numero))}${doc.obs ? `<div class="obs">${esc(doc.obs)}</div>` : ""}</div>`;
+      const imgs = (doc.imagens || []).length
+        ? `<div class="carteira-imgs">${doc.imagens.map((img) => `<img data-enc="${esc(img.arquivo)}" data-tipo="${esc(img.tipo || "image/jpeg")}" alt="${esc(doc.tipo || "Documento")}" loading="lazy" />`).join("")}</div>`
+        : "";
+      html += `<div class="item"><h3>${esc(doc.tipo)}</h3>${linha("Número", esc(doc.numero))}${doc.obs ? `<div class="obs">${esc(doc.obs)}</div>` : ""}${imgs}</div>`;
     }
   }
   return html;
