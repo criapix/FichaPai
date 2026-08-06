@@ -247,6 +247,7 @@ function exameItem(e) {
     if (e.portal.login) portal += `<br>Login: ${esc(e.portal.login)}`;
     if (e.portal.senha) portal += `<br>Senha: ${esc(e.portal.senha)}`;
     if (e.portal.validadeLaudo) portal += `<br>Disponível em: ${esc(formatarData(e.portal.validadeLaudo))}`;
+    if (e.portal.obs) portal += `<br>${esc(e.portal.obs)}`;
     portal += `</div>`;
   }
   return `<div class="item${ag ? " proximo" : ""}">
