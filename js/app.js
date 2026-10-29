@@ -138,7 +138,12 @@ function renderPaciente() {
 function renderCondicoes() {
   const lista = dados.condicoesMedicas || [];
   if (!lista.length) return vazio("Nenhuma condição registrada.");
-  return `<div class="item">${lista.map((c) => `<div class="dado-linha"><span class="valor">${esc(c)}</span></div>`).join("")}</div>`;
+  let html = `<div class="item">${lista.map((c) => `<div class="dado-linha"><span class="valor">${esc(c)}</span></div>`).join("")}</div>`;
+  const cuidados = dados.cuidadosEspeciais || [];
+  if (cuidados.length) {
+    html += `<h2 class="secao-titulo">Cuidados especiais</h2><div class="item">${cuidados.map((c) => `<div class="dado-linha"><span class="valor">⚠️ ${esc(c)}</span></div>`).join("")}</div>`;
+  }
+  return html;
 }
 
 function medicamentoItem(m) {
@@ -282,6 +287,7 @@ function renderCasaRepouso() {
   html += `<h3>${esc(c.nome || "Casa de repouso")}</h3>`;
   html += linha("Endereço", esc(c.endereco));
   if (c.telefone) html += linha("Telefone", telLink(c.telefone));
+  if (c.obs) html += `<div class="obs">${esc(c.obs)}</div>`;
   html += `</div>`;
   if ((c.contatos || []).length) {
     const rotulos = { medico: "Médico", enfermeiro: "Enfermeiro", responsavel: "Responsável" };
