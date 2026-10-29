@@ -57,6 +57,7 @@ const SECOES = {
   paciente:    { titulo: "Dados pessoais", emoji: "👤", render: renderPaciente,    qtd: () => "" },
   condicoes:   { titulo: "Condições médicas", emoji: "🩺", render: renderCondicoes, qtd: (d) => (d.condicoesMedicas || []).length },
   medicamentos:{ titulo: "Medicamentos", emoji: "💊", render: renderMedicamentos,  qtd: (d) => (d.medicamentos || []).length },
+  medicamentosAnteriores: { titulo: "Medicamentos anteriores", emoji: "🗂️", render: renderMedicamentosAnteriores, qtd: (d) => (d.medicamentosAnteriores || []).length },
   cirurgias:   { titulo: "Cirurgias", emoji: "🏥", render: renderCirurgias,        qtd: (d) => (d.cirurgias || []).length },
   internacoes: { titulo: "Internações", emoji: "🚑", render: renderInternacoes,   qtd: (d) => (d.internacoes || []).length },
   planos:      { titulo: "Planos", emoji: "💳", render: renderPlanos,              qtd: (d) => (d.planos || []).length },
@@ -140,15 +141,29 @@ function renderCondicoes() {
   return `<div class="item">${lista.map((c) => `<div class="dado-linha"><span class="valor">${esc(c)}</span></div>`).join("")}</div>`;
 }
 
+function medicamentoItem(m) {
+  return `<div class="item">
+    <h3>${esc(m.nome)}</h3>
+    ${linha("Objetivo", esc(m.objetivo))}
+    ${linha("Via", esc(m.via))}
+    ${linha("Horários", esc(m.horarios))}
+    ${linha("Uso", esc(m.uso))}
+    ${linha("Médico", esc(m.medico))}
+  </div>`;
+}
+
 function renderMedicamentos() {
   const lista = dados.medicamentos || [];
   if (!lista.length) return vazio("Nenhum medicamento registrado.");
-  return lista.map((m) => `<div class="item">
-    <h3>${esc(m.nome)}</h3>
-    ${linha("Objetivo", esc(m.objetivo))}
-    ${linha("Uso", esc(m.uso))}
-    ${linha("Médico", esc(m.medico))}
-  </div>`).join("");
+  const fonte = dados.medicamentosFonte ? `<div class="obs">${esc(dados.medicamentosFonte)}</div>` : "";
+  return fonte + lista.map(medicamentoItem).join("");
+}
+
+function renderMedicamentosAnteriores() {
+  const lista = dados.medicamentosAnteriores || [];
+  if (!lista.length) return vazio("Nenhum medicamento anterior registrado.");
+  const nota = dados.medicamentosAnterioresNota ? `<div class="obs">${esc(dados.medicamentosAnterioresNota)}</div>` : "";
+  return nota + lista.map(medicamentoItem).join("");
 }
 
 function renderCirurgias() {
